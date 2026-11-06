@@ -113,9 +113,14 @@ jobs:
       - name: Compile
         working-directory: openwrt-sdk
         run: |
-          make package/oaf/compile V=s -j$(($(nproc) + 1))
-          make package/open-app-filter/compile V=s -j$(($(nproc) + 1))
-          make package/luci-app-oaf/compile V=s -j$(($(nproc) + 1))
+          # 并行编译时真正的报错会被其它任务的输出淹没；失败后用单线程重跑一次(已编译的依赖会跳过)，只打印末尾，便于看到真正的错误
+          for pkg in oaf open-app-filter luci-app-oaf; do
+            make package/$pkg/compile V=s -j$(($(nproc) + 1)) || {
+              echo "::error::package/$pkg failed, rerun with -j1 to locate the error"
+              make package/$pkg/compile V=s -j1 2>&1 | tail -n 150
+              exit 1
+            }
+          done
 
       - name: Collect apk packages
         working-directory: openwrt-sdk
