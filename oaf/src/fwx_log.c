@@ -23,6 +23,36 @@ int af_work_mode = AF_MODE_GATEWAY;
 unsigned int fwx_lan_ip = 0;
 unsigned int fwx_lan_mask = 0;
 char g_lan_ifname[64] = "br-lan";
+
+/*
+ * g_lan_ifname may hold several bridge names separated by ',', ' ' or ';'
+ * (e.g. "br-lan,br-guest"). A device is a LAN device if its name contains
+ * any one of the tokens (same substring semantics as the old single name).
+ */
+int fwx_is_lan_dev(const char *name)
+{
+	const char *p = g_lan_ifname;
+	char tok[IFNAMSIZ * 2];
+	int len;
+
+	if (!name)
+		return 0;
+	while (*p) {
+		while (*p == ',' || *p == ' ' || *p == ';')
+			p++;
+		len = 0;
+		while (p[len] && p[len] != ',' && p[len] != ' ' && p[len] != ';')
+			len++;
+		if (len > 0 && len < (int)sizeof(tok)) {
+			memcpy(tok, p, len);
+			tok[len] = 0;
+			if (strstr(name, tok))
+				return 1;
+		}
+		p += len;
+	}
+	return 0;
+}
 int g_tcp_rst = 1;
 int g_feature_init = 0;
 char g_fwx_version[64] = FWX_VERSION;

@@ -2372,7 +2372,7 @@ u_int32_t fwx_hook_gateway_handle(struct sk_buff *skb, struct net_device *dev)
 	u_int8_t drop = 0;
 	u_int8_t malloc_data = 0;
 	int is_record_whitelist = 0;
-	if (!strstr(dev->name, g_lan_ifname))
+	if (!fwx_is_lan_dev(dev->name))
 		return NF_ACCEPT;
 
 	memset((char *)&flow, 0x0, sizeof(flow_info_t));

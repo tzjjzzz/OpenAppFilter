@@ -33,7 +33,7 @@ local has_access_control = nfs.access("/etc/config/macfilter")
             <div class="form-row">
                 <label class="form-label" for="lan-ifname"><%:LAN Interface%></label>
                 <div class="settings-field">
-                    <input id="lan-ifname" type="text" placeholder="br-lan" class="input-short">
+                    <input id="lan-ifname" type="text" placeholder="br-lan,br-guest" class="input-short">
                     <div class="field-error" id="lan-ifname-error"></div>
                     <div class="form-desc-inline"><%:LAN interface name for terminal detection. Default is bridge interface (br-lan). If LAN port is changed to physical interface, please modify to the corresponding name, such as eth0.%></div>
                 </div>
@@ -358,7 +358,7 @@ local has_access_control = nfs.access("/etc/config/macfilter")
 
         $('#lan-ifname-error').hide();
         $('#lan-ifname').css('border-color', '');
-        if (!/^[a-zA-Z0-9-]{2,16}$/.test(lanIfname)) {
+        if (!/^[a-zA-Z0-9_.-]{2,32}(,[a-zA-Z0-9_.-]{2,32})*$/.test(lanIfname) && lanIfname.length <= 63) {
             $('#lan-ifname-error').text(text.invalidLan).show();
             $('#lan-ifname').css('border-color', '#f87171');
             return null;

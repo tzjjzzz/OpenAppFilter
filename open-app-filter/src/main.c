@@ -287,7 +287,7 @@ void update_lan_ip(void){
     char cmd_buf[128] = {0};
     u_int32_t lan_ip = 0;
 	u_int32_t lan_mask = 0;
-    char lan_ifname[32] = {0};
+    char lan_ifname[64] = {0};
     char ip_cmd_buf[128] = {0};
     char mask_cmd_buf[128] = {0};
     struct uci_context *ctx = uci_alloc_context();
@@ -298,6 +298,10 @@ void update_lan_ip(void){
     if (ret != 0){
         strcpy(lan_ifname, "br-lan");
     }
+    /* multiple bridges may be configured (comma/space separated); use the first one for LAN IP/mask */
+    lan_ifname[strcspn(lan_ifname, ", ;")] = 0;
+    if (lan_ifname[0] == 0)
+        strcpy(lan_ifname, "br-lan");
     sprintf(ip_cmd_buf, CMD_GET_LAN_IP_FMT, lan_ifname);
     sprintf(mask_cmd_buf, CMD_GET_LAN_MASK_FMT , lan_ifname);
 
@@ -402,7 +406,7 @@ void fwx_timeout_handler(struct uloop_timeout *t)
 void init_system_config_to_proc(void) {
     struct uci_context *ctx = uci_alloc_context();
     if (ctx) {
-        char lan_ifname[32] = {0};
+        char lan_ifname[64] = {0};
         int ret = fwx_uci_get_value(ctx, "fwx.global.lan_ifname", lan_ifname, sizeof(lan_ifname) - 1);
         if (ret != 0) {
             strcpy(lan_ifname, "br-lan");

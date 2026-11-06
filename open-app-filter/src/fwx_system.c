@@ -1,3 +1,4 @@
+#include <ctype.h>
 
 // SPDX-License-Identifier: GPL-2.0-or-later
 /* 
@@ -79,7 +80,7 @@ struct json_object *fwx_api_get_system_info(struct json_object *req_obj) {
         return fwx_gen_api_response_data(API_CODE_ERROR, NULL);
     }
     
-    char lan_ifname[32] = {0};
+    char lan_ifname[64] = {0};
     int ret = fwx_uci_get_value(uci_ctx, "fwx.global.lan_ifname", lan_ifname, sizeof(lan_ifname) - 1);
     if (ret != 0) {
         strncpy(lan_ifname, "br-lan", sizeof(lan_ifname) - 1);
@@ -123,9 +124,16 @@ struct json_object *fwx_api_set_system_info(struct json_object *req_obj) {
         return fwx_gen_api_response_data(API_CODE_ERROR, NULL);
     }
     
-    if (strlen(lan_ifname) < 2 || strlen(lan_ifname) > 16) {
+    if (strlen(lan_ifname) < 2 || strlen(lan_ifname) > 63) {
         LOG_ERROR("lan_ifname length invalid\n");
         return fwx_gen_api_response_data(API_CODE_ERROR, NULL);
+    }
+    /* allow several interfaces separated by ',' (e.g. br-lan,br-guest) */
+    for (const char *c = lan_ifname; *c; c++) {
+        if (!(isalnum((unsigned char)*c) || *c == '-' || *c == '_' || *c == '.' || *c == ',')) {
+            LOG_ERROR("lan_ifname contains invalid character\n");
+            return fwx_gen_api_response_data(API_CODE_ERROR, NULL);
+        }
     }
     
     struct json_object *theme_mode_obj = json_object_object_get(fwx_obj, "theme_mode");

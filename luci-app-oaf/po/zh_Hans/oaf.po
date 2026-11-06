@@ -259,8 +259,8 @@ msgstr "特征码格式"
 msgid "Settings saved successfully"
 msgstr "设置成功"
 
-msgid "Invalid LAN interface name. Please ensure it is no more than 8 characters long and contains only letters, numbers, and -."
-msgstr "LAN接口名称无效。请确保其长度不超过8，并且只包含字母、数字和-。"
+msgid "Invalid LAN interface name. Multiple interfaces can be separated by commas (e.g. br-lan,br-guest); each name may only contain letters, numbers, -, _ and ."
+msgstr "LAN接口名称无效。可用英文逗号分隔多个接口（如 br-lan,br-guest），每个名称只能包含字母、数字、-、_ 和 .。"
 
 msgid "Flow Offloading"
 msgstr "流量卸载"
@@ -269,7 +269,7 @@ msgid "Disable Flow Offloading"
 msgstr "关闭流量卸载"
 
 msgid "The name of the LAN interface, used for detecting client info, supports fuzzy matching, but a complete interface name must be specified in bypass mode"
-msgstr "LAN接口名称，用于探测客户端列表，支持模糊匹配，但是在桥模式下只能设置完整的接口名称。"
+msgstr "LAN接口名称，用于探测客户端列表，支持模糊匹配，可用英文逗号分隔多个网桥（如 br-lan,br-guest）。旁路模式下只能设置完整的接口名称，且仅使用第一个接口的IP/掩码。"
 
 
 msgid "Flow offloading may affect filtering function. If the filtering feature does not work, you can disable flow offloading here and test again. Note: This only disables flow offloading temporarily. To permanently disable flow offloading, please turn it off in the firewall settings."
@@ -1775,7 +1775,7 @@ msgid "Invalid URI"
 msgstr "URI无效"
 
 msgid "LAN interface name for terminal detection. Default is bridge interface (br-lan). If LAN port is changed to physical interface, please modify to the corresponding name, such as eth0."
-msgstr "用于终端探测的LAN接口名称，系统默认为桥接接口(br-lan)。如果将LAN口修改为物理接口，请修改为对应的名称，例如eth0。"
+msgstr "用于终端探测的LAN接口名称，系统默认为桥接接口(br-lan)。如果将LAN口修改为物理接口，请修改为对应的名称，例如eth0。如有多个网桥，请用英文逗号分隔，如 br-lan,br-guest。"
 
 msgid "Language"
 msgstr "语言"
