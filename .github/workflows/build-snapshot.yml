@@ -73,22 +73,18 @@ jobs:
           mkdir openwrt-sdk
           tar -I zstd -xf sdk.tar.zst -C openwrt-sdk --strip-components=1
 
-      - name: Update feeds (luci + packages only)
+      - name: Update feeds (full)
         working-directory: openwrt-sdk
         run: |
-          # base 包由 SDK 自带，不要用 feeds install -a 覆盖，否则会从源码重编 libffi 等基础库而失败
           cat feeds.conf.default
-          sed -i 's|https://git.openwrt.org/feed/packages.git|https://github.com/openwrt/packages.git|g; s|https://git.openwrt.org/project/luci.git|https://github.com/openwrt/luci.git|g' feeds.conf.default
           for i in 1 2 3 4 5; do
-            ./scripts/feeds update luci packages && break
+            ./scripts/feeds update -a && break
             echo "feeds update failed, retry $i"; sleep $((i * 20))
           done
-          # feeds 里自带的上游 open-app-filter / luci-app-oaf 会覆盖本仓库同名包，先删掉
+          # feeds 里自带的上游 open-app-filter / luci-app-oaf 会覆盖本仓库同名包，先删掉再重建索引
           find feeds -mindepth 2 -maxdepth 4 \( -name open-app-filter -o -name luci-app-oaf -o -name oaf \) -prune -exec rm -rfv {} +
           ./scripts/feeds update -i
-          ./scripts/feeds install -a -p luci
-          # appfilter 依赖的基础库(libubox/uci/ubus/json-c/sqlite3/curl/openssl/zlib)SDK 里没有预编译，需要装上并从源码编译
-          ./scripts/feeds install libubox ubus uci json-c sqlite3 curl openssl zlib
+          ./scripts/feeds install -a
           rm -rfv package/feeds/*/open-app-filter package/feeds/*/luci-app-oaf package/feeds/*/oaf
 
       - name: Add OpenAppFilter
