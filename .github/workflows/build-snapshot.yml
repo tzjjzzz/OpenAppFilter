@@ -1,0 +1,115 @@
+name: Build OAF (OpenWrt snapshot SDK)
+
+# 只用官方 SDK 编译 oaf / appfilter / luci-app-oaf，几分钟即可完成，无需编译整个固件
+# 参考: https://github.com/destan19/OpenAppFilter/issues/345
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'OpenWrt target (e.g. qualcommax, mediatek, x86)'
+        required: true
+        default: 'qualcommax'
+      subtarget:
+        description: 'OpenWrt subtarget (e.g. ipq60xx, filogic, 64)'
+        required: true
+        default: 'ipq60xx'
+  push:
+    branches: [multi-bridge]
+    paths:
+      - 'oaf/**'
+      - 'open-app-filter/**'
+      - 'luci-app-oaf/**'
+      - '.github/workflows/build-snapshot.yml'
+
+env:
+  TARGET: ${{ inputs.target || 'qualcommax' }}
+  SUBTARGET: ${{ inputs.subtarget || 'ipq60xx' }}
+  BASE_URL: https://downloads.openwrt.org/snapshots/targets
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout OpenAppFilter
+        uses: actions/checkout@v4
+        with:
+          path: OpenAppFilter
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang flex bison g++ gawk gettext \
+            libncurses-dev libssl-dev python3 python3-setuptools rsync swig unzip \
+            zlib1g-dev file wget zstd xz-utils
+
+      - name: Resolve snapshot SDK
+        id: sdk
+        run: |
+          URL="$BASE_URL/$TARGET/$SUBTARGET"
+          curl -fsSL "$URL/sha256sums" -o sha256sums
+          LINE=$(grep -E 'openwrt-sdk-.*\.tar\.zst' sha256sums | head -n1)
+          [ -n "$LINE" ] || { echo "SDK not found in $URL"; exit 1; }
+          SDK_NAME=$(echo "$LINE" | sed -E 's/^[0-9a-f]+ \*?//')
+          SDK_SHA=$(echo "$LINE" | cut -d' ' -f1)
+          echo "name=$SDK_NAME" >> "$GITHUB_OUTPUT"
+          echo "sha=$SDK_SHA" >> "$GITHUB_OUTPUT"
+          echo "url=$URL/$SDK_NAME" >> "$GITHUB_OUTPUT"
+          echo "SDK: $SDK_NAME"
+
+      - name: Cache SDK archive
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: sdk.tar.zst
+          key: sdk-${{ env.TARGET }}-${{ env.SUBTARGET }}-${{ steps.sdk.outputs.sha }}
+
+      - name: Download SDK
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: wget -q -O sdk.tar.zst "${{ steps.sdk.outputs.url }}"
+
+      - name: Extract SDK
+        run: |
+          mkdir openwrt-sdk
+          tar -I zstd -xf sdk.tar.zst -C openwrt-sdk --strip-components=1
+
+      - name: Add OpenAppFilter and update feeds
+        working-directory: openwrt-sdk
+        run: |
+          ln -s "$GITHUB_WORKSPACE/OpenAppFilter" package/OpenAppFilter
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Configure
+        working-directory: openwrt-sdk
+        run: |
+          cat >> .config <<'CFG'
+          CONFIG_PACKAGE_kmod-oaf=m
+          CONFIG_PACKAGE_appfilter=m
+          CONFIG_PACKAGE_luci-app-oaf=m
+          CONFIG_PACKAGE_luci-i18n-oaf-zh-cn=m
+          CONFIG_SIGNED_PACKAGES=n
+          CFG
+          make defconfig
+
+      - name: Compile
+        working-directory: openwrt-sdk
+        run: |
+          make package/oaf/compile -j$(nproc) || make package/oaf/compile -j1 V=s
+          make package/open-app-filter/compile -j$(nproc) || make package/open-app-filter/compile -j1 V=s
+          make package/luci-app-oaf/compile -j$(nproc) || make package/luci-app-oaf/compile -j1 V=s
+
+      - name: Collect packages
+        working-directory: openwrt-sdk
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          find bin -type f \( -name '*oaf*' -o -name '*appfilter*' \) \
+            \( -name '*.apk' -o -name '*.ipk' \) -exec cp -v {} "$GITHUB_WORKSPACE/out/" \;
+          ls -l "$GITHUB_WORKSPACE/out"
+          [ -n "$(ls -A "$GITHUB_WORKSPACE/out")" ]
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: oaf-${{ env.TARGET }}-${{ env.SUBTARGET }}-snapshot
+          path: out/*
