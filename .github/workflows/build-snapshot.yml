@@ -83,8 +83,13 @@ jobs:
             ./scripts/feeds update luci packages && break
             echo "feeds update failed, retry $i"; sleep $((i * 20))
           done
+          # feeds 里自带的上游 open-app-filter / luci-app-oaf 会覆盖本仓库同名包，先删掉
+          find feeds -mindepth 2 -maxdepth 4 \( -name open-app-filter -o -name luci-app-oaf -o -name oaf \) -prune -exec rm -rfv {} +
+          ./scripts/feeds update -i
           ./scripts/feeds install -a -p luci
-          ./scripts/feeds install -a -p packages
+          # appfilter 依赖的基础库(libubox/uci/ubus/json-c/sqlite3/curl)SDK 里没有预编译，需要装上并从源码编译
+          ./scripts/feeds install libubox ubus uci json-c sqlite3 curl
+          rm -rfv package/feeds/*/open-app-filter package/feeds/*/luci-app-oaf package/feeds/*/oaf
 
       - name: Add OpenAppFilter
         working-directory: openwrt-sdk
