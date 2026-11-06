@@ -87,6 +87,16 @@ jobs:
           ./scripts/feeds install -a
           rm -rfv package/feeds/*/open-app-filter package/feeds/*/luci-app-oaf package/feeds/*/oaf
 
+      - name: Patch libffi InstallDev (SDK snapshot bug)
+        working-directory: openwrt-sdk
+        run: |
+          # 日志: cp: cannot stat '.../libffi-3.4.7/aarch64-openwrt-linux*/fficonfig.h'
+          # 该头文件只有 python/cffi 等用到，我们不需要；给这条 cp 加 '-' 前缀，使其失败时不中断安装
+          f=$(find feeds -path '*/package/libs/libffi/Makefile' | head -n1)
+          echo "libffi Makefile: $f"
+          perl -0pi -e 's/\t\$\(CP\) \\\n(\t\t\$\(PKG_BUILD_DIR\)\/\$\(GNU_TARGET_NAME\)\*\/fficonfig\.h)/\t-\$(CP) \\\n$1/' "$f"
+          grep -n -B1 -A2 'fficonfig.h' "$f"
+
       - name: Add OpenAppFilter
         working-directory: openwrt-sdk
         run: |
