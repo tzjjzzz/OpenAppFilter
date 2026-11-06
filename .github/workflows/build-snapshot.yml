@@ -1,4 +1,4 @@
-name: Build OAF (OpenWrt snapshot SDK)
+name: Build OAF (ImmortalWrt snapshot SDK)
 
 # 只用官方 SDK 编译 oaf / appfilter / luci-app-oaf，几分钟即可完成，无需编译整个固件
 # 参考: https://github.com/destan19/OpenAppFilter/issues/345
@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: 'OpenWrt target (e.g. qualcommax, mediatek, x86)'
+        description: 'ImmortalWrt target (e.g. qualcommax, mediatek, x86)'
         required: true
         default: 'qualcommax'
       subtarget:
-        description: 'OpenWrt subtarget (e.g. ipq60xx, filogic, 64)'
+        description: 'ImmortalWrt subtarget (e.g. ipq60xx, filogic, 64)'
         required: true
         default: 'ipq60xx'
   push:
@@ -25,7 +25,7 @@ on:
 env:
   TARGET: ${{ inputs.target || 'qualcommax' }}
   SUBTARGET: ${{ inputs.subtarget || 'ipq60xx' }}
-  BASE_URL: https://downloads.openwrt.org/snapshots/targets
+  BASE_URL: https://downloads.immortalwrt.org/snapshots/targets
 
 jobs:
   build:
@@ -48,7 +48,7 @@ jobs:
         run: |
           URL="$BASE_URL/$TARGET/$SUBTARGET"
           curl -fsSL "$URL/sha256sums" -o sha256sums
-          LINE=$(grep -E 'openwrt-sdk-.*\.tar\.zst' sha256sums | head -n1)
+          LINE=$(grep -E "immortalwrt-sdk-.*\.tar\.zst" sha256sums | head -n1)
           [ -n "$LINE" ] || { echo "SDK not found in $URL"; exit 1; }
           SDK_NAME=$(echo "$LINE" | sed -E 's/^[0-9a-f]+ \*?//')
           SDK_SHA=$(echo "$LINE" | cut -d' ' -f1)
