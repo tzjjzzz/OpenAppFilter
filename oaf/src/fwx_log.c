@@ -8,6 +8,7 @@
 #include <linux/seq_file.h>
 #include <linux/list.h>
 #include <linux/sysctl.h>
+#include <linux/string.h>
 #include "fwx.h"
 #include "fwx_log.h"
 #include "fwx_mac_filter.h"
@@ -32,7 +33,7 @@ char g_lan_ifname[64] = "br-lan";
 int fwx_is_lan_dev(const char *name)
 {
 	const char *p = g_lan_ifname;
-	char tok[IFNAMSIZ * 2];
+	char tok[32];
 	int len;
 
 	if (!name)
