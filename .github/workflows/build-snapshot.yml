@@ -87,8 +87,8 @@ jobs:
           find feeds -mindepth 2 -maxdepth 4 \( -name open-app-filter -o -name luci-app-oaf -o -name oaf \) -prune -exec rm -rfv {} +
           ./scripts/feeds update -i
           ./scripts/feeds install -a -p luci
-          # appfilter 依赖的基础库(libubox/uci/ubus/json-c/sqlite3/curl)SDK 里没有预编译，需要装上并从源码编译
-          ./scripts/feeds install libubox ubus uci json-c sqlite3 curl
+          # appfilter 依赖的基础库(libubox/uci/ubus/json-c/sqlite3/curl/openssl/zlib)SDK 里没有预编译，需要装上并从源码编译
+          ./scripts/feeds install libubox ubus uci json-c sqlite3 curl openssl zlib
           rm -rfv package/feeds/*/open-app-filter package/feeds/*/luci-app-oaf package/feeds/*/oaf
 
       - name: Add OpenAppFilter
@@ -108,7 +108,7 @@ jobs:
           CONFIG_LUCI_LANG_zh_Hans=y
           CFG
           make defconfig
-          grep -E 'oaf|appfilter' .config
+          grep -E "oaf|appfilter|libcurl|libopenssl|zlib" .config
 
       - name: Compile
         working-directory: openwrt-sdk
