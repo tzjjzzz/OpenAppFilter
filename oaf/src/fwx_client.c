@@ -619,7 +619,6 @@ static u_int32_t af_client_hook(unsigned int hook,
 								int (*okfn)(struct sk_buff *))
 {
 #endif
-	struct ethhdr *ethhdr = NULL;
 	unsigned char smac[ETH_ALEN];
 	af_client_info_t *nfc = NULL;
 	int pkt_dir = 0;
@@ -652,15 +651,7 @@ static u_int32_t af_client_hook(unsigned int hook,
 	if (PKT_DIR_UP != pkt_dir)
 		return NF_ACCEPT;
 
-	ethhdr = eth_hdr(skb);
-	if (ethhdr)
-	{
-		memcpy(smac, ethhdr->h_source, ETH_ALEN);
-	}
-	else
-	{
-		memcpy(smac, &skb->cb[40], ETH_ALEN);
-	}
+	af_get_smac(skb, smac);
 
 
 	AF_CLIENT_LOCK_W();

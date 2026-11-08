@@ -9,6 +9,12 @@
 #include <linux/list.h>
 #include <linux/sysctl.h>
 #include <linux/string.h>
+#include <linux/if_arp.h>
+#include <linux/etherdevice.h>
+#include <linux/jhash.h>
+#include <linux/ip.h>
+#include <linux/ipv6.h>
+#include <linux/skbuff.h>
 #include "fwx.h"
 #include "fwx_log.h"
 #include "fwx_mac_filter.h"
@@ -53,6 +59,36 @@ int fwx_is_lan_dev(const char *name)
 		p += len;
 	}
 	return 0;
+}
+
+/*
+ * Get the client key (MAC) of a packet.
+ * Ethernet devices carry a real source MAC. L3 devices (WireGuard/tun/ppp...)
+ * have no link-layer header, so eth_hdr() would read garbage; for those build
+ * a stable pseudo MAC (locally administered) from the source IP instead, so
+ * every VPN peer address is tracked as its own client.
+ */
+void af_get_smac(struct sk_buff *skb, u_int8_t *smac)
+{
+	struct net_device *dev = skb->dev;
+
+	if (dev && dev->type == ARPHRD_ETHER && skb_mac_header_was_set(skb)) {
+		memcpy(smac, eth_hdr(skb)->h_source, ETH_ALEN);
+		return;
+	}
+
+	memset(smac, 0, ETH_ALEN);
+	smac[0] = 0x02;
+	if (skb->protocol == htons(ETH_P_IP)) {
+		smac[1] = 0xfe;
+		memcpy(&smac[2], &ip_hdr(skb)->saddr, 4);
+	} else if (skb->protocol == htons(ETH_P_IPV6)) {
+		u32 h = jhash(&ipv6_hdr(skb)->saddr, sizeof(struct in6_addr), 0);
+		smac[1] = 0xfd;
+		memcpy(&smac[2], &h, 4);
+	} else {
+		memcpy(smac, &skb->cb[40], ETH_ALEN);
+	}
 }
 int g_tcp_rst = 1;
 int g_feature_init = 0;

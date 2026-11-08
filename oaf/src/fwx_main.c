@@ -2058,15 +2058,6 @@ int dpi_main(flow_info_t *flow)
 	return 0;
 }
 
-void af_get_smac(struct sk_buff *skb, u_int8_t *smac)
-{
-	struct ethhdr *ethhdr = NULL;
-	ethhdr = eth_hdr(skb);
-	if (ethhdr)
-		memcpy(smac, ethhdr->h_source, ETH_ALEN);
-	else
-		memcpy(smac, &skb->cb[40], ETH_ALEN);
-}
 int is_ipv4_broadcast(uint32_t ip)
 {
 	return (ip & 0x00FFFFFF) == 0x00FFFFFF;

@@ -15,6 +15,8 @@ extern int g_feature_init;
 extern int g_user_mode;
 extern char g_lan_ifname[64];
 int fwx_is_lan_dev(const char *name);
+struct sk_buff;
+void af_get_smac(struct sk_buff *skb, u_int8_t *smac);
 extern int g_tcp_rst;
 extern int g_feature_count;
 
