@@ -358,7 +358,7 @@ local has_access_control = nfs.access("/etc/config/macfilter")
 
         $('#lan-ifname-error').hide();
         $('#lan-ifname').css('border-color', '');
-        if (!/^[a-zA-Z0-9_.-]{2,32}(,[a-zA-Z0-9_.-]{2,32})*$/.test(lanIfname) && lanIfname.length <= 63) {
+        if (!/^[a-zA-Z0-9_.-]{2,32}(,[a-zA-Z0-9_.-]{2,32})*$/.test(lanIfname) || lanIfname.length > 63) {
             $('#lan-ifname-error').text(text.invalidLan).show();
             $('#lan-ifname').css('border-color', '#f87171');
             return null;
